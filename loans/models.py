@@ -13,7 +13,7 @@ class Bank(models.Model):
 
 class Loan(models.Model):
     amount = models.DecimalField(max_digits=11, decimal_places=2)
-    interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
+    monthly_interest_rate = models.DecimalField(max_digits=7, decimal_places=5)
     ip_address = models.CharField(max_length=32)
     bank = models.ForeignKey(Bank, on_delete=models.PROTECT, related_name='loans')
     client = models.ForeignKey(User, on_delete=models.PROTECT, related_name='loans')
