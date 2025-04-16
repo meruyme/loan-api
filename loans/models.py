@@ -1,5 +1,9 @@
+from decimal import Decimal
+
 from django.db import models
 from django.contrib.auth.models import User
+from dateutil import rrule
+from django.utils import timezone
 
 
 class Bank(models.Model):
@@ -21,6 +25,21 @@ class Loan(models.Model):
 
     def __str__(self):
         return self.id
+
+    @property
+    def outstanding_balance(self):
+        balance = self.amount
+        months = rrule.rrule(rrule.MONTHLY, dtstart=self.requested_at, until=timezone.now())
+        payments_by_month = {
+            payment.paid_at.strftime('%m-%Y'): payment.amount
+            for payment in self.payments.all()
+        }
+
+        for month in months:
+            payment_of_month = payments_by_month.get(month.strftime('%m-%Y'), Decimal(0))
+            balance = (balance - payment_of_month) * (Decimal(1) + self.monthly_interest_rate)
+
+        return balance
 
 
 class LoanPayment(models.Model):
