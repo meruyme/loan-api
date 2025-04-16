@@ -7,3 +7,4 @@ def get_ip_address_from_request(request: HttpRequest) -> str:
         return x_forwarded_for.split(',')[0]
 
     return request.META.get('REMOTE_ADDR')
+
