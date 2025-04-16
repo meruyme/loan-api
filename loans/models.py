@@ -12,7 +12,7 @@ class Bank(models.Model):
 
 
 class Loan(models.Model):
-    value = models.DecimalField(max_digits=11, decimal_places=2)
+    amount = models.DecimalField(max_digits=11, decimal_places=2)
     interest_rate = models.DecimalField(max_digits=5, decimal_places=2)
     ip_address = models.CharField(max_length=32)
     bank = models.ForeignKey(Bank, on_delete=models.PROTECT, related_name='loans')
@@ -24,7 +24,7 @@ class Loan(models.Model):
 
 
 class LoanPayment(models.Model):
-    value = models.DecimalField(max_digits=11, decimal_places=2)
+    amount = models.DecimalField(max_digits=11, decimal_places=2)
     loan = models.ForeignKey(Loan, on_delete=models.PROTECT, related_name='payments')
     paid_at = models.DateTimeField(auto_now_add=True, auto_now=False)
 
