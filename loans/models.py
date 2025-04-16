@@ -33,7 +33,7 @@ class Loan(models.Model):
 
     @property
     def outstanding_balance(self) -> Decimal:
-        from services.balance_calculator import calculate_outstanding_balance
+        from loans.services.balance_calculator import calculate_outstanding_balance
 
         if self.is_already_paid:
             return Decimal(0)
