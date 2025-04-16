@@ -43,6 +43,8 @@ INSTALLED_APPS = [
 
     'drf_yasg',
     'corsheaders',
+
+    'loans',
 ]
 
 SITE_ID = 1

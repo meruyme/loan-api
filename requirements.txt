@@ -54,10 +54,14 @@ pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
+python-dateutil==2.9.0
+    # via desafio-matera-credito (pyproject.toml)
 pytz==2025.2
     # via drf-yasg
 pyyaml==6.0.2
     # via drf-yasg
+six==1.17.0
+    # via python-dateutil
 sqlparse==0.5.3
     # via django
 tomli==2.2.1
