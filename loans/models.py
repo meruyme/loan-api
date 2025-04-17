@@ -29,7 +29,7 @@ class Loan(models.Model):
     requested_at = models.DateTimeField(auto_now_add=True, auto_now=False)
 
     def __str__(self):
-        return self.id
+        return str(self.id)
 
     @property
     def outstanding_balance(self) -> Decimal:
@@ -49,7 +49,7 @@ class LoanPayment(models.Model):
     paid_at = models.DateTimeField(auto_now_add=True, auto_now=False)
 
     def __str__(self):
-        return self.id
+        return str(self.id)
 
 
 post_save.connect(update_loan_finished_payment, sender=LoanPayment)
