@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.utils import timezone
 from rest_framework import serializers
 
 from loans.models import Loan, LoanPayment
@@ -32,8 +33,8 @@ class LoanPaymentSerializer(serializers.ModelSerializer):
         if self.__is_loan_already_paid(loan):
             raise serializers.ValidationError("Loan is already paid.")
 
-        if not self.__is_balance_bigger_than_amount(loan, amount):
-            raise serializers.ValidationError("Amount must be smaller of equal to outstanding balance.")
+        if not self.__is_amount_valid(loan, amount):
+            raise serializers.ValidationError("Amount is not valid.")
 
         return data
 
@@ -46,28 +47,30 @@ class LoanPaymentSerializer(serializers.ModelSerializer):
     def __is_loan_already_paid(loan: Loan) -> bool:
         return loan.is_already_paid
 
-    def __is_balance_bigger_than_amount(self, loan: Loan, amount: Decimal) -> bool:
+    def __is_amount_valid(self, loan: Loan, amount: Decimal) -> bool:
         from loans.services.balance_calculator import calculate_outstanding_balance
 
         if not amount:
             return True
 
-        if not self.instance:
-            outstanding_balance = loan.outstanding_balance
-        else:
-            payments = list(LoanPayment.objects.filter(loan_id=loan.id).exclude(id=self.instance.id))
-            payments.append(
-                LoanPayment(
-                    paid_at=self.instance.paid_at,
-                    amount=amount
-                )
-            )
+        payments = LoanPayment.objects.filter(loan_id=loan.id)
 
-            outstanding_balance = calculate_outstanding_balance(
-                loan.requested_at, loan.monthly_interest_rate, loan.amount, payments
-            )
+        if self.instance:
+            payments = payments.exclude(id=self.instance.id)
 
-        return outstanding_balance >= amount
+        payments = list(payments)
+        payments.append(
+            LoanPayment(
+                paid_at=self.instance.paid_at if self.instance else timezone.now(),
+                amount=amount
+            )
+        )
+
+        outstanding_balance = calculate_outstanding_balance(
+            loan.requested_at, loan.monthly_interest_rate, loan.amount, payments
+        )
+
+        return outstanding_balance >= 0
 
 
 class LoanSerializer(serializers.ModelSerializer):
@@ -100,6 +103,12 @@ class LoanSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid amount.")
         return amount
 
+    def validate(self, data):
+        if self.__is_loan_already_paid():
+            raise serializers.ValidationError("Loan is already paid.")
+
+        return data
+
     def create(self, validated_data):
         ip_address = get_ip_address_from_request(self.context["request"])
         user = self.context["request"].user
@@ -107,13 +116,16 @@ class LoanSerializer(serializers.ModelSerializer):
 
         return loan
 
+    def __is_loan_already_paid(self) -> bool:
+        return self.instance and self.instance.is_already_paid
+
     def __is_amount_valid(self, amount: Decimal) -> bool:
         if not amount:
             return True
 
         outstanding_balance = calculate_outstanding_balance(
             self.instance.requested_at,
-            self.instance.self.monthly_interest_rate,
+            self.instance.monthly_interest_rate,
             amount,
             list(self.instance.payments.all())
         )
