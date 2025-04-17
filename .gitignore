@@ -11,6 +11,8 @@ media/*
 *.py[cod]
 *$py.class
 
+.editorconfig
+
 *.egg-info/
 *.egg-info
 
