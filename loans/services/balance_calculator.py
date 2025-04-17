@@ -5,9 +5,11 @@ from decimal import Decimal
 from dateutil import rrule
 from django.utils import timezone
 
+from loans.models import LoanPayment
+
 
 def calculate_outstanding_balance(
-    loan_initial_date: datetime, monthly_interest_rate: Decimal, amount: Decimal, payments: list
+    loan_initial_date: datetime, monthly_interest_rate: Decimal, amount: Decimal, payments: list[LoanPayment]
 ) -> Decimal:
     balance = amount
     months = rrule.rrule(rrule.MONTHLY, dtstart=loan_initial_date, until=timezone.now())
