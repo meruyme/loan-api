@@ -1,6 +1,7 @@
 version: "3.9"
 services:
   db:
+    container_name: loans-db
     image: library/postgres:13.3
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -8,3 +9,21 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - '5432:5432'
+  web:
+    container_name: loans-web
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: bash -c "python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/code
+    env_file: .env
+    environment:
+        - DATABASE_HOST=loans-db
+        - DATABASE_NAME=${DATABASE_NAME}
+        - DATABASE_USER=${DATABASE_USER}
+        - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+    depends_on:
+      - db
