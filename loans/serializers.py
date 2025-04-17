@@ -7,7 +7,72 @@ from loans.services.common_services import get_ip_address_from_request
 from loans.services.balance_calculator import calculate_outstanding_balance
 
 
+class LoanPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LoanPayment
+        fields = (
+            "id",
+            "amount",
+            "loan",
+            "paid_at",
+        )
+        read_only_fields = (
+            "id",
+        )
+
+    def validate(self, data):
+        amount = data.get("amount")
+        loan = data.get("loan")
+        if not loan and self.instance:
+            loan = self.instance.loan
+
+        if self.__loan_doesnt_exists(loan):
+            raise serializers.ValidationError("Loan not found.")
+
+        if self.__is_loan_already_paid(loan):
+            raise serializers.ValidationError("Loan is already paid.")
+
+        if not self.__is_balance_bigger_than_amount(loan, amount):
+            raise serializers.ValidationError("Amount must be smaller of equal to outstanding balance.")
+
+        return data
+
+    def __loan_doesnt_exists(self, loan):
+        user = self.context["request"].user
+
+        return not loan or (loan.client != user)
+
+    @staticmethod
+    def __is_loan_already_paid(loan: Loan) -> bool:
+        return loan.is_already_paid
+
+    def __is_balance_bigger_than_amount(self, loan: Loan, amount: Decimal) -> bool:
+        from loans.services.balance_calculator import calculate_outstanding_balance
+
+        if not amount:
+            return True
+
+        if not self.instance:
+            outstanding_balance = loan.outstanding_balance
+        else:
+            payments = list(LoanPayment.objects.filter(loan_id=loan.id).exclude(id=self.instance.id))
+            payments.append(
+                LoanPayment(
+                    paid_at=self.instance.paid_at,
+                    amount=amount
+                )
+            )
+
+            outstanding_balance = calculate_outstanding_balance(
+                loan.requested_at, loan.monthly_interest_rate, loan.amount, payments
+            )
+
+        return outstanding_balance >= amount
+
+
 class LoanSerializer(serializers.ModelSerializer):
+    payments = LoanPaymentSerializer(many=True, read_only=True)
+
     class Meta:
         model = Loan
         fields = (
@@ -20,6 +85,7 @@ class LoanSerializer(serializers.ModelSerializer):
             "client",
             "requested_at",
             "is_already_paid",
+            "payments",
         )
         read_only_fields = (
             "id",
@@ -42,6 +108,9 @@ class LoanSerializer(serializers.ModelSerializer):
         return loan
 
     def __is_amount_valid(self, amount: Decimal) -> bool:
+        if not amount:
+            return True
+
         outstanding_balance = calculate_outstanding_balance(
             self.instance.requested_at,
             self.instance.self.monthly_interest_rate,
@@ -50,40 +119,3 @@ class LoanSerializer(serializers.ModelSerializer):
         )
 
         return outstanding_balance >= 0
-
-
-class LoanPaymentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LoanPayment
-        fields = (
-            "id",
-            "amount",
-            "loan",
-            "paid_at",
-        )
-        read_only_fields = (
-            "id",
-        )
-
-    def validate(self, data):
-        user = self.context["request"].user
-        loan_id = data["loan"]
-        amount = data["amount"]
-        loan = Loan.objects.filter(id=loan_id, client=user).first()
-
-        if not loan:
-            raise serializers.ValidationError("Loan not found.")
-
-        if self.__is_loan_already_paid(loan):
-            raise serializers.ValidationError("Loan is already paid.")
-
-        if not self.__is_balance_bigger_than_amount(loan, amount):
-            raise serializers.ValidationError("Amount must be smaller of equal to outstanding balance.")
-
-    @staticmethod
-    def __is_loan_already_paid(loan: Loan) -> bool:
-        return loan.is_already_paid
-
-    @staticmethod
-    def __is_balance_bigger_than_amount(loan: Loan, amount: Decimal) -> bool:
-        return loan.outstanding_balance >= amount
