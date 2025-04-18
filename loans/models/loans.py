@@ -1,3 +1,4 @@
+import uuid
 from decimal import Decimal
 
 from django.db import models
@@ -18,6 +19,7 @@ class Bank(models.Model):
 
 
 class Loan(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     amount = models.DecimalField(max_digits=15, decimal_places=5, validators=[GreaterThanValueValidator(0)])
     monthly_interest_rate = models.DecimalField(
         max_digits=7, decimal_places=5, validators=[GreaterThanValueValidator(0)]
@@ -44,6 +46,7 @@ class Loan(models.Model):
 
 
 class LoanPayment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     amount = models.DecimalField(max_digits=15, decimal_places=5, validators=[GreaterThanValueValidator(0)])
     loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name="payments")
     paid_at = models.DateTimeField(auto_now_add=True, auto_now=False)
