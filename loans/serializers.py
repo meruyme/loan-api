@@ -19,6 +19,7 @@ class LoanPaymentSerializer(serializers.ModelSerializer):
         )
         read_only_fields = (
             "id",
+            "paid_at",
         )
 
     def validate(self, data):
