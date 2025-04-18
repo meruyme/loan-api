@@ -52,7 +52,7 @@ class CreateLoanTestCase(GenericTestCase):
         self.assertEqual(loan.amount, Decimal(body["amount"]))
         self.assertEqual(loan.monthly_interest_rate, Decimal(body["monthly_interest_rate"]))
         self.assertEqual(loan.bank_id, self.bank.id)
-        self.assertEqual(loan.client_id, self.loan_for_user1.id)
+        self.assertEqual(loan.client_id, self.user1.id)
 
 
 class UpdateLoanTestCase(GenericTestCase):
