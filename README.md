@@ -19,6 +19,22 @@ Para a criação dos containers no Docker e execução do sistema, execute:
 Após iniciar o projeto, é possível encontrar uma documentação detalhada de todas as rotas da API na seguinte URL:
 > http://localhost:8000
 
+### Dados iniciais
+
+Caso deseje utilizar dados iniciais de usuário e banco para testar a API localmente, rode o seguinte comando:
+> make initial-data
+
+Após isso, serão criados para teste os seguintes dados:
+
+| Nome do banco |
+|---------------|
+| First Bank    |
+
+| Usuário        | Senha  |
+|----------------|--------|
+| usuario1_teste | 123456 |
+| usuario2_teste | 123456 |
+
 ### Testes
 
 Para a criação dos testes unitários, foi utilizada a biblioteca Unittest. 
