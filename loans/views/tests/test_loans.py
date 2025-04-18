@@ -3,7 +3,7 @@ from rest_framework import status
 
 from loanmanagement.testing.generic_test_case import GenericTestCase
 from loanmanagement.testing.helpers import create_test_payment
-from loans.models import Loan
+from loans.models import Loan, LoanPayment
 
 
 class CreateLoanTestCase(GenericTestCase):
@@ -116,9 +116,37 @@ class GetLoanTestCase(GenericTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_can_get_loan(self):
+    def test_can_get_loan_successfully(self):
         self.login(self.user1.username)
         response = self.client.get(
             f"/api/loans/{self.loan_for_user1.id}/",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class DeleteLoanTestCase(GenericTestCase):
+    def setUp(self):
+        super().setUp()
+        self.payment_for_loan_user1 = create_test_payment(
+            self.loan_for_user1
+        )
+
+    def test_cant_delete_loan_of_different_client(self):
+        self.login(self.user1.username)
+        response = self.client.delete(
+            f"/api/loans/{self.loan_for_user2.id}/",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_can_delete_loan_successfully(self):
+        self.login(self.user1.username)
+
+        loan_id = self.loan_for_user1.id
+        payment_id = self.payment_for_loan_user1.id
+
+        response = self.client.delete(
+            f"/api/loans/{self.loan_for_user1.id}/",
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Loan.objects.filter(id=loan_id).exists())
+        self.assertFalse(LoanPayment.objects.filter(id=payment_id).exists())

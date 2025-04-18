@@ -3,6 +3,7 @@ from rest_framework import status
 
 from loanmanagement.testing.generic_test_case import GenericTestCase
 from loanmanagement.testing.helpers import create_test_payment
+from loans.models import LoanPayment
 
 
 class CreatePaymentTestCase(GenericTestCase):
@@ -94,8 +95,10 @@ class UpdatePaymentTestCase(GenericTestCase):
 
     def test_cant_update_payment_if_already_paid(self):
         self.login(self.user1.username)
+
         self.loan_for_user1.is_already_paid = True
         self.loan_for_user1.save()
+
         response = self.client.patch(
             f"/api/payments/{self.payment_for_loan_user1.id}/",
             {
@@ -144,9 +147,46 @@ class GetPaymentTestCase(GenericTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_can_get_payment(self):
+    def test_can_get_payment_successfully(self):
         self.login(self.user1.username)
         response = self.client.get(
             f"/api/payments/{self.payment_for_loan_user1.id}/",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class DeletePaymentTestCase(GenericTestCase):
+    def setUp(self):
+        super().setUp()
+        self.payment_for_loan_user1 = create_test_payment(
+            self.loan_for_user1
+        )
+
+    def test_cant_delete_payment_of_different_client(self):
+        self.login(self.user2.username)
+        response = self.client.delete(
+            f"/api/payments/{self.payment_for_loan_user1.id}/",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_cant_delete_payment_if_already_paid(self):
+        self.login(self.user1.username)
+
+        self.loan_for_user1.is_already_paid = True
+        self.loan_for_user1.save()
+
+        response = self.client.delete(
+            f"/api/payments/{self.payment_for_loan_user1.id}/",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_can_delete_payment_successfully(self):
+        self.login(self.user1.username)
+
+        payment_id = self.payment_for_loan_user1.id
+
+        response = self.client.delete(
+            f"/api/payments/{self.payment_for_loan_user1.id}/",
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(LoanPayment.objects.filter(id=payment_id).exists())
