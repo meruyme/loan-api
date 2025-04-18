@@ -19,6 +19,7 @@ class LoanPaymentSerializer(serializers.ModelSerializer):
         )
         read_only_fields = (
             "id",
+            "paid_at",
         )
 
     def validate(self, data):
@@ -38,7 +39,7 @@ class LoanPaymentSerializer(serializers.ModelSerializer):
 
         return data
 
-    def __loan_doesnt_exists(self, loan):
+    def __loan_doesnt_exists(self, loan: Loan) -> bool:
         user = self.context["request"].user
 
         return not loan or (loan.client != user)
@@ -53,6 +54,15 @@ class LoanPaymentSerializer(serializers.ModelSerializer):
         if not amount:
             return True
 
+        payments = self.__get_loan_payments(loan, amount)
+
+        outstanding_balance = calculate_outstanding_balance(
+            loan.requested_at, loan.monthly_interest_rate, loan.amount, payments
+        )
+
+        return outstanding_balance >= 0
+
+    def __get_loan_payments(self, loan: Loan, amount: Decimal) -> list[LoanPayment]:
         payments = LoanPayment.objects.filter(loan_id=loan.id)
 
         if self.instance:
@@ -66,11 +76,7 @@ class LoanPaymentSerializer(serializers.ModelSerializer):
             )
         )
 
-        outstanding_balance = calculate_outstanding_balance(
-            loan.requested_at, loan.monthly_interest_rate, loan.amount, payments
-        )
-
-        return outstanding_balance >= 0
+        return payments
 
 
 class LoanSerializer(serializers.ModelSerializer):

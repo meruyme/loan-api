@@ -12,3 +12,15 @@ local-up:
 	docker compose up -d
 	sleep 5
 	docker compose exec web python manage.py migrate
+
+test:
+	USE_WEAK_PASSWORD_HASHER=1 python manage.py test --verbosity=0 --failfast
+
+testfile:
+	USE_WEAK_PASSWORD_HASHER=1 python manage.py test $(NAME) --failfast
+
+local-test:
+	docker compose exec web make test
+
+local-testfile:
+	docker compose exec web make testfile

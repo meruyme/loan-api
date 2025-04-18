@@ -1,4 +1,5 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.response import Response
 
 from loans.models import Loan, LoanPayment
 from loans.serializers import LoanSerializer, LoanPaymentSerializer
@@ -16,3 +17,10 @@ class LoanPaymentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return LoanPayment.objects.filter(loan__client=self.request.user).order_by("paid_at")
+
+    def destroy(self, request, *args, **kwargs):
+        payment = self.get_object()
+        if payment.loan.is_already_paid:
+            return Response({"message": "Loan is already paid."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return super().destroy(request, *args, **kwargs)
