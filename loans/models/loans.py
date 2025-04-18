@@ -45,7 +45,7 @@ class Loan(models.Model):
 
 class LoanPayment(models.Model):
     amount = models.DecimalField(max_digits=15, decimal_places=5, validators=[GreaterThanValueValidator(0)])
-    loan = models.ForeignKey(Loan, on_delete=models.PROTECT, related_name="payments")
+    loan = models.ForeignKey(Loan, on_delete=models.CASCADE, related_name="payments")
     paid_at = models.DateTimeField(auto_now_add=True, auto_now=False)
 
     def __str__(self):
