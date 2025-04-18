@@ -8,7 +8,7 @@ from loans.models import Bank, Loan, LoanPayment
 
 
 def create_test_user(username: str) -> User:
-    return User.objects.create(username=username, password="password")
+    return User.objects.create_user(username=username, password="password")
 
 
 def create_test_loan(

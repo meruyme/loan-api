@@ -13,3 +13,6 @@ class GenericTestCase(TestCase):
 
         self.loan_for_user1 = create_test_loan(self.user1, self.bank)
         self.loan_for_user2 = create_test_loan(self.user2, self.bank)
+
+    def login(self, username: str):
+        self.assertTrue(self.client.login(username=username, password="password"))
